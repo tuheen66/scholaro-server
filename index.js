@@ -29,6 +29,8 @@ async function run() {
     await client.connect();
 
     const collegeCollection = client.db("scholaro").collection("colleges");
+    const myCollegeCollection = client.db("scholaro").collection("myColleges");
+    const reviewCollection = client.db("scholaro").collection("reviews");
 
     app.get("/colleges", async (req, res) => {
       const result = await collegeCollection.find().toArray();
@@ -39,6 +41,76 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await collegeCollection.findOne(query);
+      res.send(result);
+    });
+
+    app.get("/college-name/:name", async (req, res) => {
+      const collegeName = req.params.name;
+      let query = {};
+      if (collegeName) {
+        query = { name: collegeName };
+      }
+      const result = await collegeCollection.findOne(query);
+      res.send(result);
+    });
+
+    app.get("/colleges/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await myCollegeCollection.findOne(query);
+      res.send(result);
+    });
+
+    app.get("/my-college/:collegeName", async (req, res) => {
+      const name = req.params.collegeName;
+      const query = { name: name };
+      const result = await collegeCollection.findOne(query);
+      res.send(result);
+    });
+
+    app.post("/myCollege", async (req, res) => {
+      const myCollege = req.body;
+
+      const query = { email: myCollege.email };
+      const existing = await myCollegeCollection.findOne(query);
+      if (existing) {
+        return res.send({ message: "already added", insertedId: null });
+      }
+
+      const result = await myCollegeCollection.insertOne(myCollege);
+      res.send(result);
+    });
+
+    app.put("/myColleges/:id", async (req, res) => {
+      const id = req.params.id;
+      const { candidate_name, email, subject, phone, address, photo } =
+        req.body;
+
+      const updatedDocument = {
+        candidate_name,
+        email,
+        subject,
+        phone,
+        address,
+        photo,
+      };
+
+      const query = { _id: new ObjectId(id) };
+      const options = {
+        $set: updatedDocument,
+      };
+      const result = await myCollegeCollection.updateOne(query, options);
+      res.send(result);
+    });
+
+    app.get("/reviews", async (req, res) => {
+      const result = await reviewCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.post("/reviews", async (req, res) => {
+      const reviews = req.body;
+      const result = await reviewCollection.insertOne(reviews);
       res.send(result);
     });
 
